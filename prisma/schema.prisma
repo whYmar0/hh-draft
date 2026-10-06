@@ -1,0 +1,407 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// Перечисления (Enums)
+// -------------------------------------------------------------
+
+enum UserRole {
+  STUDENT
+  EMPLOYER
+  ADMIN
+
+  @@map("user_roles")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+
+  @@map("user_statuses")
+}
+
+enum DegreeLevel {
+  BACHELOR
+  MASTER
+  SPECIALIST
+  POSTGRADUATE
+
+  @@map("degree_levels")
+}
+
+enum GpaScale {
+  SCALE_4
+  SCALE_5
+
+  @@map("gpa_scales")
+}
+
+enum StudentSearchStatus {
+  LOOKING_FOR_INTERNSHIP
+  LOOKING_FOR_JOB
+  NOT_LOOKING
+
+  @@map("student_search_statuses")
+}
+
+enum AchievementType {
+  OLYMPIAD
+  PUBLICATION
+  CONFERENCE
+  HACKATHON
+  SCHOLARSHIP
+  HONOR
+
+  @@map("achievement_types")
+}
+
+enum SkillCategory {
+  HARD
+  SOFT
+  LANGUAGE
+
+  @@map("skill_categories")
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+
+  @@map("skill_levels")
+}
+
+enum EmploymentType {
+  INTERNSHIP
+  PART_TIME
+  FULL_TIME
+  FLEXIBLE
+
+  @@map("employment_types")
+}
+
+enum LocationType {
+  REMOTE
+  HYBRID
+  ONSITE
+
+  @@map("location_types")
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  CLOSED
+
+  @@map("job_statuses")
+}
+
+enum ApplicationStatus {
+  NEW
+  SCREENING
+  TEST_TASK
+  INTERVIEW
+  OFFER
+  REJECTED
+
+  @@map("application_statuses")
+}
+
+// -------------------------------------------------------------
+// Пользователи и Аутентификация (NextAuth Compatible)
+// -------------------------------------------------------------
+
+model User {
+  id            String      @id @default(uuid())
+  email         String      @unique
+  passwordHash  String?     @map("password_hash")
+  role          UserRole    @default(STUDENT)
+  status        UserStatus  @default(ACTIVE)
+  emailVerified DateTime?   @map("email_verified")
+  image         String?
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // Отношения 1:1 к специализированным профилям
+  studentProfile StudentProfile?
+  companyProfile CompanyProfile?
+
+  // Отношения NextAuth
+  accounts      Account[]
+  sessions      Session[]
+
+  // Аудит переходов статусов
+  statusHistory ApplicationStatusHistory[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// -------------------------------------------------------------
+// Профиль Студента и Академический бэкграунд
+// -------------------------------------------------------------
+
+model StudentProfile {
+  id              String              @id @default(uuid())
+  userId          String              @unique @map("user_id")
+  firstName       String              @map("first_name")
+  lastName        String              @map("last_name")
+  phone           String?
+  avatarUrl       String?             @map("avatar_url")
+  
+  // Академические реквизиты
+  university      String              // e.g., "НИУ ВШЭ", "МГТУ им. Н.Э. Баумана"
+  faculty         String?             // e.g., "ФКН", "ИУ"
+  fieldOfStudy    String              @map("field_of_study") // e.g., "Программная инженерия"
+  degreeLevel     DegreeLevel         @default(BACHELOR) @map("degree_level")
+  currentCourse   Int                 @map("current_course") // 1..6
+  graduationYear  Int                 @map("graduation_year") // e.g., 2026
+
+  // Успеваемость (GPA)
+  gpa             Float               // Средний балл
+  gpaScale        GpaScale            @default(SCALE_5) @map("gpa_scale")
+  normalizedGpa   Float               @map("normalized_gpa") // Приведенный балл к 4.0 шкале для фильтров
+
+  // Поиск и статус
+  searchStatus    StudentSearchStatus @default(LOOKING_FOR_INTERNSHIP) @map("search_status")
+  bio             String?             @db.Text
+  githubUrl       String?             @map("github_url")
+  portfolioUrl    String?             @map("portfolio_url")
+  linkedinUrl     String?             @map("linkedin_url")
+
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  // Связи
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievements    AcademicAchievement[]
+  projects        AcademicProject[]
+  skills          StudentSkill[]
+  applications    JobApplication[]
+
+  @@index([university, currentCourse])
+  @@index([normalizedGpa])
+  @@index([searchStatus])
+  @@map("student_profiles")
+}
+
+model AcademicAchievement {
+  id               String          @id @default(uuid())
+  studentProfileId String          @map("student_profile_id")
+  type             AchievementType
+  title            String
+  description      String?         @db.Text
+  year             Int
+  verificationUrl  String?         @map("verification_url")
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  studentProfile   StudentProfile  @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId])
+  @@map("academic_achievements")
+}
+
+model AcademicProject {
+  id               String         @id @default(uuid())
+  studentProfileId String         @map("student_profile_id")
+  title            String
+  description      String         @db.Text
+  role             String?        // e.g., "Backend-разработчик", "Team Lead"
+  repoUrl          String?        @map("repo_url")
+  demoUrl          String?        @map("demo_url")
+  technologies     String[]       @default([]) // e.g., ["Go", "PostgreSQL", "Docker"]
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId])
+  @@map("academic_projects")
+}
+
+model Skill {
+  id            String           @id @default(uuid())
+  name          String           @unique
+  category      SkillCategory    @default(HARD)
+  
+  studentSkills StudentSkill[]
+  jobSkills     JobPostingSkill[]
+
+  @@map("skills")
+}
+
+model StudentSkill {
+  id               String         @id @default(uuid())
+  studentProfileId String         @map("student_profile_id")
+  skillId          String         @map("skill_id")
+  level            SkillLevel     @default(INTERMEDIATE)
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  skill            Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, skillId])
+  @@map("student_skills")
+}
+
+// -------------------------------------------------------------
+// Профиль Компании и Вакансии
+// -------------------------------------------------------------
+
+model CompanyProfile {
+  id                           String       @id @default(uuid())
+  userId                       String       @unique @map("user_id")
+  companyName                  String       @map("company_name")
+  slug                         String       @unique
+  logoUrl                      String?      @map("logo_url")
+  website                      String?
+  industry                     String?      // e.g., "Финтех", "EdTech", "BigTech"
+  description                  String?      @db.Text
+  verified                     Boolean      @default(false)
+  internshipProgramsDescription String?     @db.Text @map("internship_programs_description")
+  
+  createdAt                    DateTime     @default(now()) @map("created_at")
+  updatedAt                    DateTime     @updatedAt @map("updated_at")
+
+  user                         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobPostings                  JobPosting[]
+
+  @@map("company_profiles")
+}
+
+model JobPosting {
+  id                  String         @id @default(uuid())
+  companyProfileId    String         @map("company_profile_id")
+  title               String
+  slug                String
+  description         String         @db.Text
+  employmentType      EmploymentType @default(INTERNSHIP) @map("employment_type")
+  locationType        LocationType   @default(HYBRID) @map("location_type")
+  city                String?
+  
+  // Условия
+  salaryMin           Int?           @map("salary_min")
+  salaryMax           Int?           @map("salary_max")
+  currency            String         @default("RUB")
+  isStipend           Boolean        @default(true) @map("is_stipend") // Стипендия на стажировке
+  hasMentorship       Boolean        @default(true) @map("has_mentorship") // Наличие наставника
+  testTaskDescription String?        @db.Text @map("test_task_description")
+
+  // Академические требования
+  targetMajors        String[]       @default([]) @map("target_majors") // Список профильных направлений
+  minCourse           Int            @default(1) @map("min_course") // Минимальный курс
+  minGpa              Float?         @map("min_gpa") // Минимальный GPA (по шкале 4.0)
+
+  status              JobStatus      @default(DRAFT)
+  publishedAt         DateTime?      @map("published_at")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  companyProfile      CompanyProfile @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  requiredSkills      JobPostingSkill[]
+  applications        JobApplication[]
+
+  @@index([status, publishedAt])
+  @@index([minCourse, minGpa])
+  @@index([employmentType, locationType])
+  @@map("job_postings")
+}
+
+model JobPostingSkill {
+  id           String     @id @default(uuid())
+  jobPostingId String     @map("job_posting_id")
+  skillId      String     @map("skill_id")
+  isRequired   Boolean    @default(true) @map("is_required")
+
+  jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  skill        Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostingId, skillId])
+  @@map("job_posting_skills")
+}
+
+// -------------------------------------------------------------
+// Отклики и Воронка (Kanban Pipeline & Audit Trail)
+// -------------------------------------------------------------
+
+model JobApplication {
+  id                String                   @id @default(uuid())
+  jobPostingId      String                   @map("job_posting_id")
+  studentProfileId  String                   @map("student_profile_id")
+  coverLetter       String?                  @db.Text @map("cover_letter")
+  status            ApplicationStatus        @default(NEW)
+  testSubmissionUrl String?                  @map("test_submission_url")
+  employerFeedback  String?                  @db.Text @map("employer_feedback")
+  
+  appliedAt         DateTime                 @default(now()) @map("applied_at")
+  updatedAt         DateTime                 @updatedAt @map("updated_at")
+
+  jobPosting        JobPosting               @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  studentProfile    StudentProfile           @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  history           ApplicationStatusHistory[]
+
+  @@unique([jobPostingId, studentProfileId])
+  @@index([jobPostingId, status])
+  @@index([studentProfileId])
+  @@map("job_applications")
+}
+
+model ApplicationStatusHistory {
+  id             String            @id @default(uuid())
+  applicationId  String            @map("application_id")
+  changedByUserId String           @map("changed_by_user_id")
+  fromStatus     ApplicationStatus @map("from_status")
+  toStatus       ApplicationStatus @map("to_status")
+  note           String?           @db.Text
+  changedAt      DateTime          @default(now()) @map("changed_at")
+
+  application    JobApplication    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedByUser  User              @relation(fields: [changedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("application_status_history")
+}
