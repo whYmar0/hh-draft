@@ -10,29 +10,21 @@ export default withAuth(
 
     // Защита маршрутов студента
     if (pathname.startsWith('/student') && userRole && userRole !== 'STUDENT' && userRole !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/unauthorized', req.url));
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
     // Защита маршрутов работодателя
     if (pathname.startsWith('/employer') && userRole && userRole !== 'EMPLOYER' && userRole !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/unauthorized', req.url));
-    }
-
-    // Защита маршрутов панели администратора
-    if (pathname.startsWith('/admin') && userRole && userRole !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/unauthorized', req.url));
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
-        // В локальном режиме, при наличии cookie роли или токена разрешаем доступ
-        if (process.env.NODE_ENV !== 'production' || req.cookies.get('unitalent_role')) {
-          return true;
-        }
-        return !!token;
+      authorized: () => {
+        // Разрешаем свободный просмотр страниц в демо-версии
+        return true;
       },
     },
     pages: {
