@@ -3,7 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Lock, Mail, ArrowRight, Building2, Sparkles } from 'lucide-react';
+import { signIn } from 'next-auth/react';
+import { GraduationCap, Lock, Mail, ArrowRight, Building2, Sparkles, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,12 +19,22 @@ export default function RegisterPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (password.length < 8) {
       setError('Пароль должен содержать не менее 8 символов');
+      return;
+    }
+
+    if (!/[A-ZА-Я]/.test(password)) {
+      setError('Пароль должен содержать хотя бы одну заглавную букву');
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setError('Пароль должен содержать хотя бы одну цифру');
       return;
     }
 
@@ -34,18 +45,47 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
-    if (typeof document !== 'undefined') {
-      document.cookie = `unitalent_role=${role}; path=/`;
-    }
+    try {
+      // 1. Создаем пользователя в БД через API
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          confirmPassword,
+          role,
+        }),
+      });
 
-    setTimeout(() => {
-      setIsLoading(false);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Ошибка при регистрации');
+      }
+
+      // 2. Автоматически авторизуем через NextAuth
+      await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (typeof document !== 'undefined') {
+        document.cookie = `unitalent_role=${role}; path=/`;
+      }
+
       if (role === 'STUDENT') {
         router.push('/student/profile');
       } else {
         router.push('/employer/profile');
       }
-    }, 150);
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message || 'Не удалось завершить регистрацию');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -65,13 +105,13 @@ export default function RegisterPage() {
         </CardHeader>
 
         <CardContent>
+          {error && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3 text-xs rounded-lg bg-destructive/10 text-destructive border border-destructive/20">
-                {error}
-              </div>
-            )}
-
             {/* Выбор роли */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground block">

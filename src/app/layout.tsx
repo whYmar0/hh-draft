@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
+import { AuthProvider } from '@/components/providers/auth-provider';
 import { Navbar } from '@/components/shared/navbar';
 import { Footer } from '@/components/shared/footer';
 
@@ -18,16 +19,18 @@ export default function RootLayout({
   return (
     <html lang="ru" suppressHydrationWarning>
       <body className="min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-indigo-500 selection:text-white">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

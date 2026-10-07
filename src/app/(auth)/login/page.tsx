@@ -3,7 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Lock, Mail, ArrowRight, Sparkles } from 'lucide-react';
+import { signIn } from 'next-auth/react';
+import { GraduationCap, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,22 +15,56 @@ export default function LoginPage() {
   const [email, setEmail] = React.useState('student@edu.hse.ru');
   const [password, setPassword] = React.useState('Password123');
   const [role, setRole] = React.useState<'STUDENT' | 'EMPLOYER'>('STUDENT');
+  const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleSubmit = (e?: React.SyntheticEvent) => {
+  const handleSubmit = async (e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
     }
+    setError(null);
     setIsLoading(true);
 
-    if (typeof document !== 'undefined') {
-      document.cookie = `unitalent_role=${role}; path=/`;
-    }
+    try {
+      // Пытаемся авторизоваться через NextAuth в базе данных
+      const res = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
 
-    if (role === 'STUDENT') {
-      router.push('/student/profile');
-    } else {
-      router.push('/employer/profile');
+      if (res?.error) {
+        // Если учетных данных нет в БД (например, пока база пустая или оффлайн),
+        // сохраняем demo cookie для комфортного тестирования интерфейса
+        if (typeof document !== 'undefined') {
+          document.cookie = `unitalent_role=${role}; path=/`;
+        }
+        setError('Неверный email или пароль. Включен демонстрационный вход.');
+        setTimeout(() => {
+          if (role === 'STUDENT') {
+            router.push('/student/profile');
+          } else {
+            router.push('/employer/profile');
+          }
+        }, 800);
+        return;
+      }
+
+      // Успешный вход в БД
+      if (typeof document !== 'undefined') {
+        document.cookie = `unitalent_role=${role}; path=/`;
+      }
+
+      if (role === 'STUDENT') {
+        router.push('/student/profile');
+      } else {
+        router.push('/employer/profile');
+      }
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message || 'Ошибка входа');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,6 +85,12 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent>
+          {error && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-700 dark:text-amber-300">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Выбор роли для быстрого демо */}
             <div className="space-y-1.5">
