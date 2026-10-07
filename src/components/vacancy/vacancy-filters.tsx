@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, Filter, RotateCcw, Award, GraduationCap, Users, MapPin } from 'lucide-react';
+import { Search, Filter, RotateCcw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,33 @@ export function VacancyFilters({ filters, onChange, totalFound }: VacancyFilters
   const handleReset = () => {
     onChange({});
   };
+
+  const toggleEmploymentType = (typeId: 'INTERNSHIP' | 'PART_TIME' | 'FULL_TIME' | 'FLEXIBLE') => {
+    const currentList = filters.employmentTypes || (filters.employmentType ? [filters.employmentType] : []);
+    const exists = currentList.includes(typeId);
+    const updated = exists ? currentList.filter((t) => t !== typeId) : [...currentList, typeId];
+    onChange({
+      ...filters,
+      employmentTypes: updated.length > 0 ? updated : undefined,
+      employmentType: undefined,
+    });
+  };
+
+  const toggleLocationType = (locId: 'REMOTE' | 'HYBRID' | 'ONSITE') => {
+    const currentList = filters.locationTypes || (filters.locationType ? [filters.locationType] : []);
+    const exists = currentList.includes(locId);
+    const updated = exists ? currentList.filter((l) => l !== locId) : [...currentList, locId];
+    onChange({
+      ...filters,
+      locationTypes: updated.length > 0 ? updated : undefined,
+      locationType: undefined,
+    });
+  };
+
+  const selectedEmploymentTypes =
+    filters.employmentTypes || (filters.employmentType ? [filters.employmentType] : []);
+  const selectedLocationTypes =
+    filters.locationTypes || (filters.locationType ? [filters.locationType] : []);
 
   return (
     <Card className="sticky top-20 border-border/80 shadow-sm">
@@ -67,82 +94,88 @@ export function VacancyFilters({ filters, onChange, totalFound }: VacancyFilters
           </div>
         </div>
 
-        {/* Формат стажировки и занятости */}
+        {/* Формат стажировки и занятости (мультивыбор) */}
         <div className="space-y-2">
-          <Label className="text-xs font-semibold block">Формат работы</Label>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <Label className="text-xs font-semibold text-foreground/80 block">Формат работы</Label>
+          <div className="grid grid-cols-2 gap-1.5 text-xs">
             {[
-              { id: 'INTERNSHIP', label: 'Стажировка' },
-              { id: 'PART_TIME', label: 'Part-time' },
-              { id: 'FULL_TIME', label: 'Full-time' },
-              { id: 'FLEXIBLE', label: 'Гибкий график' },
-            ].map((type) => (
-              <label
-                key={type.id}
-                className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name="employmentType"
-                  className="rounded text-indigo-600 focus:ring-indigo-500"
-                  checked={filters.employmentType === type.id}
-                  onChange={() =>
-                    updateFilter(
-                      'employmentType',
-                      filters.employmentType === type.id ? undefined : type.id
-                    )
-                  }
-                />
-                <span>{type.label}</span>
-              </label>
-            ))}
+              { id: 'INTERNSHIP' as const, label: 'Стажировка' },
+              { id: 'PART_TIME' as const, label: 'Part-time' },
+              { id: 'FULL_TIME' as const, label: 'Full-time' },
+              { id: 'FLEXIBLE' as const, label: 'Гибкий график' },
+            ].map((type) => {
+              const isSelected = selectedEmploymentTypes.includes(type.id);
+              return (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => toggleEmploymentType(type.id)}
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-left transition-colors ${
+                    isSelected
+                      ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-medium'
+                      : 'border-border/60 hover:bg-accent/50 text-foreground/80'
+                  }`}
+                >
+                  <span
+                    className={`h-2.5 w-2.5 rounded-sm border flex items-center justify-center text-[9px] ${
+                      isSelected
+                        ? 'border-indigo-600 bg-indigo-600 text-white'
+                        : 'border-muted-foreground/60'
+                    }`}
+                  >
+                    {isSelected ? '✓' : ''}
+                  </span>
+                  <span>{type.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Локация */}
+        {/* Локация (мультивыбор, без иконки) */}
         <div className="space-y-2">
-          <Label className="text-xs font-semibold block flex items-center gap-1.5">
-            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+          <Label className="text-xs font-semibold text-foreground/80 block">
             Локация
           </Label>
-          <div className="grid grid-cols-3 gap-1 text-xs">
+          <div className="grid grid-cols-3 gap-1.5 text-xs">
             {[
-              { id: 'REMOTE', label: 'Удаленно' },
-              { id: 'HYBRID', label: 'Гибрид' },
-              { id: 'ONSITE', label: 'Офис' },
-            ].map((loc) => (
-              <Button
-                key={loc.id}
-                type="button"
-                variant={filters.locationType === loc.id ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs h-8 px-2"
-                onClick={() =>
-                  updateFilter(
-                    'locationType',
-                    filters.locationType === loc.id ? undefined : loc.id
-                  )
-                }
-              >
-                {loc.label}
-              </Button>
-            ))}
+              { id: 'REMOTE' as const, label: 'Удаленно' },
+              { id: 'HYBRID' as const, label: 'Гибрид' },
+              { id: 'ONSITE' as const, label: 'Офис' },
+            ].map((loc) => {
+              const isSelected = selectedLocationTypes.includes(loc.id);
+              return (
+                <button
+                  key={loc.id}
+                  type="button"
+                  onClick={() => toggleLocationType(loc.id)}
+                  className={`h-8 rounded-lg border text-xs font-medium transition-colors ${
+                    isSelected
+                      ? 'border-indigo-500 bg-indigo-600 text-white shadow-xs'
+                      : 'border-border/60 hover:bg-accent/60 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {loc.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Академические критерии (Курс и GPA) */}
+        {/* Академические критерии (Курс и GPA, без иконки и синего цвета текста) */}
         <div className="space-y-3 pt-2 border-t border-border/40">
-          <Label className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 block flex items-center gap-1.5">
-            <GraduationCap className="h-4 w-4" />
+          <Label className="text-xs font-semibold text-foreground/80 block">
             Академические критерии
           </Label>
 
           <div className="space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Мой курс обучения:</span>
-              <strong className="text-foreground">
-                {filters.studentCourse ? `${filters.studentCourse} курс` : 'Любой'}
-              </strong>
+            <div className="text-xs">
+              <span className="text-muted-foreground">Мой курс обучения</span>
+              {filters.studentCourse && (
+                <span className="font-semibold text-foreground ml-1.5">
+                  ({filters.studentCourse} курс)
+                </span>
+              )}
             </div>
             <select
               className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -162,11 +195,13 @@ export function VacancyFilters({ filters, onChange, totalFound }: VacancyFilters
           </div>
 
           <div className="space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Мой средний балл (GPA):</span>
-              <strong className="text-foreground">
-                {filters.studentNormalizedGpa ? `GPA ${filters.studentNormalizedGpa}` : 'Любой'}
-              </strong>
+            <div className="text-xs">
+              <span className="text-muted-foreground">Мой средний балл (GPA)</span>
+              {filters.studentNormalizedGpa && (
+                <span className="font-semibold text-foreground ml-1.5">
+                  (GPA {filters.studentNormalizedGpa})
+                </span>
+              )}
             </div>
             <select
               className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -186,7 +221,7 @@ export function VacancyFilters({ filters, onChange, totalFound }: VacancyFilters
           </div>
         </div>
 
-        {/* Специфические студенческие опции */}
+        {/* Специфические студенческие опции (без иконок) */}
         <div className="space-y-2 pt-2 border-t border-border/40 text-xs">
           <label className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-accent">
             <input
@@ -195,10 +230,7 @@ export function VacancyFilters({ filters, onChange, totalFound }: VacancyFilters
               checked={filters.hasMentorship === true}
               onChange={(e) => updateFilter('hasMentorship', e.target.checked ? true : undefined)}
             />
-            <span className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5 text-emerald-500" />
-              Только с наставником (Senior ментор)
-            </span>
+            <span>Только с наставником (Senior ментор)</span>
           </label>
 
           <label className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-accent">
@@ -208,10 +240,7 @@ export function VacancyFilters({ filters, onChange, totalFound }: VacancyFilters
               checked={filters.isStipend === true}
               onChange={(e) => updateFilter('isStipend', e.target.checked ? true : undefined)}
             />
-            <span className="flex items-center gap-1.5">
-              <Award className="h-3.5 w-3.5 text-amber-500" />
-              Только оплачиваемые стажировки
-            </span>
+            <span>Только оплачиваемые стажировки</span>
           </label>
         </div>
       </CardContent>

@@ -3,13 +3,14 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GraduationCap, Briefcase, User, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { GraduationCap, Briefcase, User, Sparkles, Menu, X } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { cn } from '@/lib/utils';
 
 export function Navbar() {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const navLinks = [
     { href: '/vacancies', label: 'Вакансии и стажировки', icon: Briefcase },
@@ -26,16 +27,13 @@ export function Navbar() {
             <GraduationCap className="h-5 w-5" />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold tracking-tight text-lg leading-tight flex items-center gap-1.5">
+            <span className="font-bold tracking-tight text-lg leading-tight">
               UniTalent
-              <span className="rounded bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
-                CAMPUS
-              </span>
             </span>
           </div>
         </Link>
 
-        {/* Навигационные ссылки */}
+        {/* Навигационные ссылки (десктоп) */}
         <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => {
             const Icon = link.icon;
@@ -62,20 +60,79 @@ export function Navbar() {
         <div className="flex items-center gap-2.5">
           <ThemeToggle />
           <div className="hidden sm:flex items-center gap-2">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Войти
-              </Button>
+            <Link
+              href="/login"
+              className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+            >
+              Войти
             </Link>
-            <Link href="/register">
-              <Button variant="gradient" size="sm" className="gap-1.5">
-                <Sparkles className="h-3.5 w-3.5" />
-                Регистрация
-              </Button>
+            <Link
+              href="/register"
+              className={cn(buttonVariants({ variant: 'gradient', size: 'sm' }), 'gap-1.5')}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Регистрация
+            </Link>
+          </div>
+
+          {/* Мобильная кнопка меню */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Мобильное выпадающее меню */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-b border-border/60 bg-background/95 backdrop-blur-lg px-4 py-4 space-y-3 animate-in slide-in-from-top-2">
+          <div className="space-y-1">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-accent text-accent-foreground font-semibold'
+                      : 'text-muted-foreground hover:bg-accent/50'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="pt-2 border-t border-border/40 flex flex-col gap-2">
+            <Link
+              href="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full justify-center')}
+            >
+              Войти
+            </Link>
+            <Link
+              href="/register"
+              onClick={() => setMobileMenuOpen(false)}
+              className={cn(buttonVariants({ variant: 'gradient', size: 'sm' }), 'w-full justify-center gap-1.5')}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Регистрация
             </Link>
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }

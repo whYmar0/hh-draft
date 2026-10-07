@@ -21,25 +21,24 @@ export function GpaBadge({
   const maxScale = scale === 'SCALE_5' ? '5.0' : '4.0';
 
   return (
-    <div className={cn('inline-flex items-center gap-2 flex-wrap', className)}>
-      <div className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1 shadow-sm">
-        <Award className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-        <span className="font-semibold text-sm tracking-tight text-foreground">
+    <div className={cn('inline-flex items-center gap-1.5 flex-wrap', className)}>
+      <div className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card px-2.5 py-1 shadow-2xs text-xs">
+        <Award className="h-3.5 w-3.5 text-indigo-500" />
+        <span className="font-semibold text-foreground">
           GPA {gpa.toFixed(2)}
         </span>
-        <span className="text-xs text-muted-foreground">/ {maxScale}</span>
+        <span className="text-muted-foreground text-[11px]">/ {maxScale}</span>
       </div>
 
       {showDetails && badgeInfo.tier === 'HIGH_HONORS' && (
-        <Badge variant="academic" className="gap-1">
-          <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+        <Badge variant="academic" className="text-[10px] py-0.5 px-2">
+          <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500 mr-1" />
           {badgeInfo.label}
         </Badge>
       )}
 
       {showDetails && badgeInfo.tier === 'HONORS' && (
-        <Badge variant="honors" className="gap-1">
-          <Award className="h-3 w-3" />
+        <Badge variant="honors" className="text-[10px] py-0.5 px-2">
           {badgeInfo.label}
         </Badge>
       )}

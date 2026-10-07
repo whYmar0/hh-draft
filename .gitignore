@@ -18,10 +18,12 @@
 # Misc
 .DS_Store
 *.pem
+*.log
 
 # Local env files
 .env*.local
 .env
+.env.production
 
 # TypeScript
 *.tsbuildinfo
@@ -29,3 +31,18 @@ next-env.d.ts
 
 # Prisma
 /prisma/client
+
+# Firebase cache & frameworks artifacts
+.firebase/
+.firebaserc
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# Vercel artifacts
+.vercel/
+
+# OS / Editor
+.idea/
+.vscode/
+Thumbs.db

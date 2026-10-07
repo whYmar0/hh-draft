@@ -86,31 +86,36 @@ export function StudentProfileView({
     <div className="space-y-8">
       {/* Шапка резюме студента */}
       <Card className="overflow-hidden border-border/80 shadow-md">
-        <div className="h-32 bg-gradient-to-r from-indigo-900 via-indigo-700 to-blue-700 dark:from-indigo-950 dark:to-slate-900" />
-        <CardContent className="relative px-6 pb-6 pt-0">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-16 gap-4 mb-6">
-            <div className="flex items-end gap-4">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-card bg-indigo-600 text-white text-3xl font-bold shadow-lg">
-                {profile.firstName[0]}
-                {profile.lastName[0]}
-              </div>
-              <div className="pt-2">
-                <h1 className="text-2xl font-bold text-foreground">
-                  {profile.firstName} {profile.lastName}
-                </h1>
-                <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                  <Building2 className="h-4 w-4 text-indigo-500 shrink-0" />
-                  {profile.university}
-                </p>
-              </div>
+        {/* Декоративный баннер */}
+        <div className="h-28 bg-gradient-to-r from-indigo-900 via-indigo-700 to-blue-700 dark:from-indigo-950 dark:to-slate-900" />
+
+        <CardContent className="px-6 pb-6 pt-0">
+          {/* Аватар, аккуратно выступающий над баннером */}
+          <div className="flex justify-between items-start -mt-12 mb-2">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-card bg-indigo-600 text-white text-3xl font-bold shadow-lg">
+              {profile.firstName[0]}
+              {profile.lastName[0]}
+            </div>
+          </div>
+
+          {/* Имя, ВУЗ и действия на единой линии в светлой области карточки */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pt-1">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                {profile.firstName} {profile.lastName}
+              </h1>
+              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+                <Building2 className="h-4 w-4 text-indigo-500 shrink-0" />
+                {profile.university}
+              </p>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant={statusConfig.variant} className="text-xs px-3 py-1">
+              <Badge variant={statusConfig.variant} className="text-xs px-3 py-1 font-medium">
                 {statusConfig.label}
               </Badge>
               {isOwner && onEditClick && (
-                <Button onClick={onEditClick} variant="outline" size="sm">
+                <Button onClick={onEditClick} variant="outline" size="sm" className="shadow-xs">
                   Редактировать резюме
                 </Button>
               )}

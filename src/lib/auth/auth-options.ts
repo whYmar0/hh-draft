@@ -5,6 +5,7 @@ import { comparePassword } from '@/lib/auth/password';
 import { loginSchema } from '@/lib/validations/auth';
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || 'unitalent-super-secret-jwt-key-2026-min-32-chars',
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 дней

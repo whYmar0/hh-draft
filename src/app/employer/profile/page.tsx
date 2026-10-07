@@ -4,8 +4,9 @@ import * as React from 'react';
 import Link from 'next/link';
 import { CompanyProfileView } from '@/components/employer/company-profile-view';
 import { CompanyProfileForm, CompanyProfileFormInput } from '@/components/employer/company-profile-form';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ArrowLeft, Edit3, Eye, Plus, Users, Briefcase } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const INITIAL_DEMO_COMPANY = {
   id: 'demo-comp-1',
@@ -64,18 +65,20 @@ export default function EmployerProfilePage() {
   return (
     <div className="container max-w-5xl py-8 px-4 sm:px-6">
       <div className="flex items-center justify-between gap-4 mb-6">
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            На главную
-          </Button>
+        <Link
+          href="/"
+          className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'gap-1.5 text-xs text-muted-foreground')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          На главную
         </Link>
         <div className="flex items-center gap-2">
-          <Link href="/employer/vacancies/new">
-            <Button variant="gradient" size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              Новая вакансия
-            </Button>
+          <Link
+            href="/employer/vacancies/new"
+            className={cn(buttonVariants({ variant: 'gradient', size: 'sm' }), 'gap-1.5')}
+          >
+            <Plus className="h-4 w-4" />
+            Новая вакансия
           </Link>
           <Button
             onClick={() => setIsEditing(!isEditing)}

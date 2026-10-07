@@ -42,40 +42,45 @@ export function CompanyProfileView({
     <div className="space-y-8">
       {/* Шапка компании */}
       <Card className="overflow-hidden border-border/80 shadow-md">
+        {/* Декоративный баннер */}
         <div className="h-28 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900" />
-        <CardContent className="relative px-6 pb-6 pt-0">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-12 gap-4 mb-4">
-            <div className="flex items-end gap-4">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-4 border-card bg-indigo-700 text-white text-2xl font-bold shadow-lg">
-                <Building2 className="h-10 w-10 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold text-foreground">{company.companyName}</h1>
-                  {company.verified && (
-                    <Badge variant="honors" className="gap-1 py-0.5">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                      Верифицировано
-                    </Badge>
-                  )}
-                </div>
-                {company.industry && (
-                  <p className="text-sm text-muted-foreground mt-0.5">{company.industry}</p>
+
+        <CardContent className="px-6 pb-6 pt-0">
+          {/* Аватар / логотип компании, выступающий над баннером */}
+          <div className="flex justify-between items-start -mt-10 mb-2">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-4 border-card bg-indigo-700 text-white text-2xl font-bold shadow-lg">
+              <Building2 className="h-10 w-10 text-white" />
+            </div>
+          </div>
+
+          {/* Название компании, специализация и кнопки действий на одном нижнем уровне */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pt-1">
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">{company.companyName}</h1>
+                {company.verified && (
+                  <Badge variant="honors" className="gap-1 py-0.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    Верифицировано
+                  </Badge>
                 )}
               </div>
+              {company.industry && (
+                <p className="text-sm text-muted-foreground mt-1">{company.industry}</p>
+              )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {company.website && (
                 <Link href={company.website} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs shadow-xs">
                     <Globe className="h-3.5 w-3.5" />
                     Сайт компании
                   </Button>
                 </Link>
               )}
               {isOwner && onEditClick && (
-                <Button onClick={onEditClick} variant="outline" size="sm" className="gap-1.5 text-xs">
+                <Button onClick={onEditClick} variant="outline" size="sm" className="gap-1.5 text-xs shadow-xs">
                   <Edit3 className="h-3.5 w-3.5" />
                   Редактировать профиль
                 </Button>

@@ -1,7 +1,9 @@
 export interface VacancyFilterCriteria {
   query?: string;
   employmentType?: 'INTERNSHIP' | 'PART_TIME' | 'FULL_TIME' | 'FLEXIBLE';
+  employmentTypes?: Array<'INTERNSHIP' | 'PART_TIME' | 'FULL_TIME' | 'FLEXIBLE'>;
   locationType?: 'REMOTE' | 'HYBRID' | 'ONSITE';
+  locationTypes?: Array<'REMOTE' | 'HYBRID' | 'ONSITE'>;
   hasMentorship?: boolean;
   isStipend?: boolean;
   minCourse?: number;
@@ -65,13 +67,21 @@ export function filterVacancies(
       }
     }
 
-    // 2. Формат занятости
-    if (criteria.employmentType && job.employmentType !== criteria.employmentType) {
+    // 2. Формат занятости (поддержка множественного выбора и единичного)
+    if (criteria.employmentTypes && criteria.employmentTypes.length > 0) {
+      if (!criteria.employmentTypes.includes(job.employmentType)) {
+        return false;
+      }
+    } else if (criteria.employmentType && job.employmentType !== criteria.employmentType) {
       return false;
     }
 
-    // 3. Формат локации
-    if (criteria.locationType && job.locationType !== criteria.locationType) {
+    // 3. Формат локации (поддержка множественного выбора и единичного)
+    if (criteria.locationTypes && criteria.locationTypes.length > 0) {
+      if (!criteria.locationTypes.includes(job.locationType)) {
+        return false;
+      }
+    } else if (criteria.locationType && job.locationType !== criteria.locationType) {
       return false;
     }
 

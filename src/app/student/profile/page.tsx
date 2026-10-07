@@ -155,11 +155,9 @@ export default function StudentProfilePage() {
             onEditClick={() => setIsEditing(true)}
           />
 
-          <div className="p-4 rounded-xl border border-border/60 bg-card text-xs space-y-2 text-muted-foreground">
-            <p className="font-semibold text-foreground">💡 Совет для студентов:</p>
-            <p>
-              Работодатели в UniTalent фильтруют отклики по <strong>ВУЗу, среднему баллу (GPA)</strong> и наличию репозиториев на GitHub. Регулярно актуализируйте ссылки на учебные проекты.
-            </p>
+          <div className="p-3 rounded-lg border border-border/50 bg-card text-[11px] leading-relaxed text-muted-foreground">
+            <span className="font-semibold text-foreground mr-1">💡 Совет:</span>
+            Работодатели фильтруют отклики по <strong>ВУЗу, GPA</strong> и ссылкам на учебные репозитории GitHub.
           </div>
         </div>
 
