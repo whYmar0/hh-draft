@@ -48,18 +48,79 @@ const INITIAL_DEMO_COMPANY = {
   ],
 };
 
+import { useSession } from 'next-auth/react';
+
 export default function EmployerProfilePage() {
+  const { data: session, status } = useSession();
   const [isEditing, setIsEditing] = React.useState(false);
   const [companyData, setCompanyData] = React.useState(INITIAL_DEMO_COMPANY);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Загружаем реальный профиль компании из БД, если авторизован
+  React.useEffect(() => {
+    async function loadCompany() {
+      if (status === 'authenticated') {
+        try {
+          const res = await fetch('/api/employer/profile');
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.company) {
+              setCompanyData((prev) => ({
+                ...prev,
+                ...data.company,
+                jobPostings: data.company.jobPostings || prev.jobPostings,
+              }));
+            }
+          }
+        } catch (err) {
+          console.error('Failed to load company profile from backend:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (status === 'unauthenticated') {
+        setIsLoading(false);
+      }
+    }
+
+    if (status !== 'loading') {
+      loadCompany();
+    }
+  }, [status]);
 
   const handleCompanySubmit = async (data: CompanyProfileFormInput) => {
-    setCompanyData((prev) => ({
-      ...prev,
-      ...data,
-      companyName: data.companyName,
-    }));
-    setIsEditing(false);
-    return { success: true };
+    try {
+      if (session?.user) {
+        const res = await fetch('/api/employer/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          if (result.company) {
+            setCompanyData((prev) => ({
+              ...prev,
+              ...result.company,
+              jobPostings: result.company.jobPostings || prev.jobPostings,
+            }));
+            setIsEditing(false);
+            return { success: true };
+          }
+        }
+      }
+
+      setCompanyData((prev) => ({
+        ...prev,
+        ...data,
+        companyName: data.companyName,
+      }));
+      setIsEditing(false);
+      return { success: true };
+    } catch (err) {
+      console.error('Failed to update company profile:', err);
+      return { success: false, error: 'Ошибка сохранения' };
+    }
   };
 
   return (

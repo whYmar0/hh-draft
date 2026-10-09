@@ -79,9 +79,40 @@ const INITIAL_DEMO_STUDENT: StudentProfileViewProps['profile'] = {
   ],
 };
 
+import { useSession } from 'next-auth/react';
+
 export default function StudentProfilePage() {
+  const { data: session, status } = useSession();
   const [isEditing, setIsEditing] = React.useState(false);
   const [profileData, setProfileData] = React.useState(INITIAL_DEMO_STUDENT);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Загружаем реальный профиль пользователя из БД, если авторизован
+  React.useEffect(() => {
+    async function loadProfile() {
+      if (status === 'authenticated') {
+        try {
+          const res = await fetch('/api/student/profile');
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.profile) {
+              setProfileData(data.profile);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to load profile from backend:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (status === 'unauthenticated') {
+        setIsLoading(false);
+      }
+    }
+
+    if (status !== 'loading') {
+      loadProfile();
+    }
+  }, [status]);
 
   const completeness = calculateProfileCompleteness({
     firstName: profileData.firstName,
@@ -99,20 +130,43 @@ export default function StudentProfilePage() {
   });
 
   const handleProfileSubmit = async (data: StudentProfileInput) => {
-    // В MVP обновляем состояние клиента
-    const normalizedGpa =
-      data.gpaScale === 'SCALE_5'
-        ? Math.round(((data.gpa / 5.0) * 4.0) * 100) / 100
-        : data.gpa;
+    try {
+      // Сохраняем в реальную БД через API, если авторизован
+      if (session?.user) {
+        const res = await fetch('/api/student/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
 
-    setProfileData((prev) => ({
-      ...prev,
-      ...data,
-      normalizedGpa,
-    }));
+        if (res.ok) {
+          const result = await res.json();
+          if (result.profile) {
+            setProfileData(result.profile);
+            setIsEditing(false);
+            return { success: true };
+          }
+        }
+      }
 
-    setIsEditing(false);
-    return { success: true };
+      // Fallback для локального демо
+      const normalizedGpa =
+        data.gpaScale === 'SCALE_5'
+          ? Math.round(((data.gpa / 5.0) * 4.0) * 100) / 100
+          : data.gpa;
+
+      setProfileData((prev) => ({
+        ...prev,
+        ...data,
+        normalizedGpa,
+      }));
+
+      setIsEditing(false);
+      return { success: true };
+    } catch (err) {
+      console.error('Profile update failed:', err);
+      return { success: false, error: 'Ошибка сохранения' };
+    }
   };
 
   return (

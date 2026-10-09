@@ -3,13 +3,15 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GraduationCap, Briefcase, User, Sparkles, Menu, X } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { GraduationCap, Briefcase, User, Sparkles, Menu, X, LogOut } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { cn } from '@/lib/utils';
 
 export function Navbar() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const navLinks = [
@@ -17,6 +19,13 @@ export function Navbar() {
     { href: '/student/profile', label: 'Кабинет студента', icon: GraduationCap },
     { href: '/employer/profile', label: 'Для компаний', icon: User },
   ];
+
+  const handleSignOut = async () => {
+    if (typeof document !== 'undefined') {
+      document.cookie = 'unitalent_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
+    await signOut({ callbackUrl: '/' });
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
@@ -59,21 +68,39 @@ export function Navbar() {
         {/* Правые контролы */}
         <div className="flex items-center gap-2.5">
           <ThemeToggle />
-          <div className="hidden sm:flex items-center gap-2">
-            <Link
-              href="/login"
-              className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
-            >
-              Войти
-            </Link>
-            <Link
-              href="/register"
-              className={cn(buttonVariants({ variant: 'gradient', size: 'sm' }), 'gap-1.5')}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Регистрация
-            </Link>
-          </div>
+
+          {status === 'authenticated' && session?.user ? (
+            <div className="hidden sm:flex items-center gap-2.5">
+              <span className="text-xs text-muted-foreground font-medium truncate max-w-[140px]">
+                {session.user.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Выйти
+              </Button>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-2">
+              <Link
+                href="/login"
+                className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+              >
+                Войти
+              </Link>
+              <Link
+                href="/register"
+                className={cn(buttonVariants({ variant: 'gradient', size: 'sm' }), 'gap-1.5')}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Регистрация
+              </Link>
+            </div>
+          )}
 
           {/* Мобильная кнопка меню */}
           <Button
@@ -115,21 +142,43 @@ export function Navbar() {
           </div>
 
           <div className="pt-2 border-t border-border/40 flex flex-col gap-2">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full justify-center')}
-            >
-              Войти
-            </Link>
-            <Link
-              href="/register"
-              onClick={() => setMobileMenuOpen(false)}
-              className={cn(buttonVariants({ variant: 'gradient', size: 'sm' }), 'w-full justify-center gap-1.5')}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Регистрация
-            </Link>
+            {status === 'authenticated' && session?.user ? (
+              <>
+                <div className="px-2 py-1 text-xs text-muted-foreground font-medium truncate">
+                  {session.user.email}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="w-full justify-center gap-1.5"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Выйти из системы
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full justify-center')}
+                >
+                  Войти
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(buttonVariants({ variant: 'gradient', size: 'sm' }), 'w-full justify-center gap-1.5')}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Регистрация
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -64,26 +64,20 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Ошибка при регистрации');
       }
 
-      // 2. Автоматически авторизуем через NextAuth
-      await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
+      // 2. Автоматически авторизуем через NextAuth с прямым переходом в профиль
+      const targetUrl = role === 'STUDENT' ? '/student/profile' : '/employer/profile';
+      
       if (typeof document !== 'undefined') {
         document.cookie = `unitalent_role=${role}; path=/`;
       }
 
-      if (role === 'STUDENT') {
-        router.push('/student/profile');
-      } else {
-        router.push('/employer/profile');
-      }
-      router.refresh();
+      await signIn('credentials', {
+        email,
+        password,
+        callbackUrl: targetUrl,
+      });
     } catch (err: any) {
       setError(err?.message || 'Не удалось завершить регистрацию');
-    } finally {
       setIsLoading(false);
     }
   };
